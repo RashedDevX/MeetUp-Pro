@@ -16,7 +16,7 @@ async function startMeeting(role) {
 
     try {
         // Fetch Token from your Node.js Backend
-        const response = await fetch('http://localhost:5000/api/get-token', {
+        const response = await fetch('https://meetup-pro.onrender.com/api/get-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ roomId, userId: userId.toString(), role })
