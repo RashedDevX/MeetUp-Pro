@@ -1,5 +1,6 @@
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 let localTracks = { videoTrack: null, audioTrack: null };
+// Agora এর জন্য userId অবশ্যই নাম্বার হতে হবে
 const userId = Math.floor(Math.random() * 1000000);
 
 const hostBtn = document.getElementById('host-btn');
@@ -13,14 +14,23 @@ async function startMeeting(role) {
     if (!roomId) return alert("Please enter a room name!");
 
     try {
+        // Render ব্যাকএন্ডে রিকোয়েস্ট পাঠানো হচ্ছে
         const response = await fetch('https://meetup-pro.onrender.com/api/get-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ roomId, userId: userId.toString(), role })
+            body: JSON.stringify({ 
+                roomId: roomId, 
+                userId: userId.toString() 
+            })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
 
+        // Agora ক্লায়েন্টে জয়েন করা
         await client.join(data.appId, roomId, data.token, userId);
 
         document.getElementById('setup-container').style.display = 'none';
@@ -37,8 +47,8 @@ async function startMeeting(role) {
         client.on("user-left", handleUserLeft);
 
     } catch (e) {
-        console.error(e);
-        alert("Server error. Please ensure Render backend is live.");
+        console.error("Detailed Error:", e);
+        alert("Connection failed! Make sure the backend is awake and CORS is allowed.");
     }
 }
 
@@ -56,20 +66,8 @@ async function handleUserJoined(user, mediaType) {
 }
 
 function handleUserLeft(user) {
-    document.getElementById(`user-${user.uid}`)?.remove();
+    const player = document.getElementById(`user-${user.uid}`);
+    if (player) player.remove();
 }
 
 document.getElementById('leave-btn').onclick = () => window.location.reload();
-
-document.getElementById('copy-btn').onclick = () => {
-    const roomId = document.getElementById('room-id').value;
-    const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-    navigator.clipboard.writeText(inviteUrl);
-    alert("Invite link copied to clipboard!");
-};
-
-window.onload = () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomParam = urlParams.get('room');
-    if (roomParam) document.getElementById('room-id').value = roomParam;
-};
