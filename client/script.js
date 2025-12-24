@@ -1,9 +1,7 @@
 const client = AgoraRTC.createClient({ mode: "rtc", codec: "vp8" });
 let localTracks = { videoTrack: null, audioTrack: null };
-let remoteUsers = {};
 const userId = Math.floor(Math.random() * 1000000);
 
-// Buttons
 const hostBtn = document.getElementById('host-btn');
 const joinBtn = document.getElementById('join-btn');
 
@@ -15,7 +13,6 @@ async function startMeeting(role) {
     if (!roomId) return alert("Please enter a room name!");
 
     try {
-        // Fetch Token from your Node.js Backend
         const response = await fetch('https://meetup-pro.onrender.com/api/get-token', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -24,30 +21,24 @@ async function startMeeting(role) {
         
         const data = await response.json();
 
-        // Join Channel
         await client.join(data.appId, roomId, data.token, userId);
 
-        // UI Transition
         document.getElementById('setup-container').style.display = 'none';
         document.getElementById('video-grid').style.display = 'grid';
         document.getElementById('controls').style.display = 'flex';
 
-        // Create and Play Tracks
         localTracks.audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
         localTracks.videoTrack = await AgoraRTC.createCameraVideoTrack();
         
         localTracks.videoTrack.play('local-player');
-        
-        // Publish to others
         await client.publish(Object.values(localTracks));
 
-        // Listen for remote users
         client.on("user-published", handleUserJoined);
         client.on("user-left", handleUserLeft);
 
     } catch (e) {
         console.error(e);
-        alert("Server is not responding. Make sure backend is running on port 5000.");
+        alert("Server error. Please ensure Render backend is live.");
     }
 }
 
@@ -68,25 +59,17 @@ function handleUserLeft(user) {
     document.getElementById(`user-${user.uid}`)?.remove();
 }
 
-// Leave meeting logic
 document.getElementById('leave-btn').onclick = () => window.location.reload();
 
-// ইনভাইট লিঙ্ক কপি করার ফাংশন
 document.getElementById('copy-btn').onclick = () => {
     const roomId = document.getElementById('room-id').value;
-    // আপনার সাইটের ইউআরএল এর সাথে রুম আইডি যোগ করা
     const inviteUrl = `${window.location.origin}${window.location.pathname}?room=${roomId}`;
-    
     navigator.clipboard.writeText(inviteUrl);
-    alert("Invite link copied to clipboard! Share it with your client.");
+    alert("Invite link copied to clipboard!");
 };
 
-// অটোমেটিক রুম আইডি ইনপুট নেওয়া (যদি লিঙ্ক থেকে আসে)
 window.onload = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const roomParam = urlParams.get('room');
-    if (roomParam) {
-        document.getElementById('room-id').value = roomParam;
-        // সে চাইলে সরাসরি Join বাটনে ক্লিক করতে পারবে
-    }
+    if (roomParam) document.getElementById('room-id').value = roomParam;
 };

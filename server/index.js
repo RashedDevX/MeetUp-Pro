@@ -19,13 +19,10 @@ app.post('/api/get-token', (req, res) => {
         return res.status(400).json({ error: 'roomId and userId are required' });
     }
 
-    // Set expiration to 1 hour (3600 seconds) for the session, 
-    // but the token itself can be set to "privilege expired" faster if needed.
     const expirationTimeInSeconds = 3600;
     const currentTimestamp = Math.floor(Date.now() / 1000);
     const privilegeExpiredTs = currentTimestamp + expirationTimeInSeconds;
 
-    // Build the token
     const token = RtcTokenBuilder.buildTokenWithUid(
         APP_ID,
         APP_CERTIFICATE,
